@@ -1,0 +1,42 @@
+services:
+  payment-postgres:
+    image: postgres:16-alpine
+    container_name: serverless-ecommerce-payment-postgres
+    environment:
+      POSTGRES_DB: ${PAYMENT_DB_NAME:-payments}
+      POSTGRES_USER: ${PAYMENT_DB_USERNAME:-payment_local}
+      POSTGRES_PASSWORD: ${PAYMENT_DB_PASSWORD:-payment_local}
+    ports:
+      - "${PAYMENT_DB_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    volumes:
+      - payment-postgres-data:/var/lib/postgresql/data
+
+  localstack:
+    image: ${LOCALSTACK_IMAGE:-localstack/localstack:2026.8.0}
+    container_name: serverless-ecommerce-localstack
+    environment:
+      LOCALSTACK_AUTH_TOKEN: ${LOCALSTACK_AUTH_TOKEN:-}
+      AWS_DEFAULT_REGION: ${LOCAL_AWS_REGION:-us-east-1}
+      DEBUG: ${LOCALSTACK_DEBUG:-0}
+      LAMBDA_DOCKER_NETWORK: ${LOCALSTACK_LAMBDA_DOCKER_NETWORK:-aws-serverless-ecommerce_default}
+      LAMBDA_RUNTIME_ENVIRONMENT_TIMEOUT: ${LOCALSTACK_LAMBDA_RUNTIME_ENVIRONMENT_TIMEOUT:-60}
+    ports:
+      - "${LOCALSTACK_PORT:-4566}:4566"
+      - "4510-4559:4510-4559"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - localstack-data:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  payment-postgres-data:
+  localstack-data:

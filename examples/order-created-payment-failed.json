@@ -1,0 +1,21 @@
+{
+  "eventId": "33333333-3333-4333-8333-333333333333",
+  "eventVersion": "v1",
+  "eventType": "OrderCreated",
+  "occurredAt": "2026-08-21T12:05:00Z",
+  "correlationId": "44444444-4444-4444-8444-444444444444",
+  "orderId": "order-phase-2-3-failed-001",
+  "customerId": "customer-001",
+  "customerEmail": "customer@example.com",
+  "totalAmount": 100.13,
+  "currency": "USD",
+  "items": [
+    {
+      "productId": "prod-002",
+      "productName": "Demo Expired Card Product",
+      "quantity": 1,
+      "unitPrice": 100.13,
+      "subtotal": 100.13
+    }
+  ]
+}

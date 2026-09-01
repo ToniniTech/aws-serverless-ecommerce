@@ -1,0 +1,16 @@
+target/
+**/target/
+.m2-cache/
+.maven-home/
+.tools/
+.env
+.idea/
+*.iml
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+!*.tfvars.example
+infrastructure/terraform/modules/**/.terraform.lock.hcl
+.aws-bootstrap/

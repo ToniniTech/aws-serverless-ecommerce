@@ -1,0 +1,21 @@
+{
+  "eventId": "11111111-1111-4111-8111-111111111111",
+  "eventVersion": "v1",
+  "eventType": "OrderCreated",
+  "occurredAt": "2026-08-21T12:00:00Z",
+  "correlationId": "22222222-2222-4222-8222-222222222222",
+  "orderId": "order-phase-1-001",
+  "customerId": "customer-001",
+  "customerEmail": "customer@example.com",
+  "totalAmount": 129.99,
+  "currency": "CLP",
+  "items": [
+    {
+      "productId": "prod-001",
+      "productName": "Mechanical Keyboard",
+      "quantity": 1,
+      "unitPrice": 129.99,
+      "subtotal": 129.99
+    }
+  ]
+}
