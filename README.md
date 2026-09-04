@@ -1,5 +1,7 @@
 # AWS Serverless E-Commerce
 
+[![CI](https://github.com/toninitech/aws-serverless-ecommerce/actions/workflows/ci.yml/badge.svg)](https://github.com/toninitech/aws-serverless-ecommerce/actions/workflows/ci.yml)
+
 Event-driven e-commerce backend designed for AWS and implemented with Java 17 and Terraform. It demonstrates transactional outboxes, idempotent consumers, asynchronous payment processing, dead-letter queues, observability, and Saga compensation.
 
 The complete architecture can be exercised locally with PostgreSQL, Docker, Testcontainers, and LocalStack without provisioning billable AWS resources.
@@ -62,8 +64,8 @@ saga-orchestration-lambda/            Step Functions Saga tasks and compensation
 infrastructure/terraform/dev/         AWS development environment
 infrastructure/terraform/local/       LocalStack messaging and Lambda topology
 infrastructure/terraform/modules/     Reusable infrastructure modules
-scripts/local/                        PowerShell build and exercise scripts
-scripts/bash/local/                   Bash equivalents for local workflows
+scripts/bash/local/                   Reference build and local exercise scripts
+scripts/local/                        Equivalent PowerShell scripts for Windows
 docs/                                 Architecture, operations, and design notes
 examples/                             Example commands and domain events
 ```
@@ -73,14 +75,15 @@ examples/                             Example commands and domain events
 Prerequisites:
 
 - Java 17;
-- Docker Desktop with the Docker Engine running;
-- PowerShell;
+- Docker with the Docker Engine running;
+- Bash 4+, `jq`, and `curl`;
+- Terraform 1.9 or newer;
 - a LocalStack Hobby auth token for the maintained LocalStack image.
 
 Create the ignored local environment file and set only your LocalStack token:
 
-```powershell
-Copy-Item .env.example .env
+```bash
+cp .env.example .env
 ```
 
 ```text
@@ -89,16 +92,16 @@ LOCALSTACK_AUTH_TOKEN=your-localstack-developer-token
 
 Build the project, start PostgreSQL and LocalStack, and provision the local topology:
 
-```powershell
-./scripts/local/build.ps1
-./scripts/local/start.ps1
-./scripts/local/provision.ps1
+```bash
+bash ./scripts/bash/local/build.sh
+bash ./scripts/bash/local/start.sh
+bash ./scripts/bash/local/provision.sh
 ```
 
 Run the complete happy path:
 
-```powershell
-./scripts/local/happy-path.ps1
+```bash
+bash ./scripts/bash/local/happy-path.sh
 ```
 
 The local Terraform root uses explicit LocalStack endpoints and fake account `000000000000`; it does not contact an AWS account. See [Zero-cost local development](docs/zero-cost-local-development.md) for the complete setup, resilience suite, messaging checks, and cleanup instructions.
@@ -107,13 +110,24 @@ The local Terraform root uses explicit LocalStack endpoints and fake account `00
 
 Run the complete Maven reactor from the repository root:
 
-```powershell
-.\mvnw.cmd clean verify
+```bash
+./mvnw clean verify
 ```
 
 Docker enables the PostgreSQL integration tests through Testcontainers. If Docker is unavailable, those tests are reported as skipped while unit and handler tests continue to run.
 
 The build generates shaded deployment artifacts under each Lambda module's ignored `target/` directory.
+
+## LocalStack end-to-end workflow
+
+The separate `LocalStack E2E` GitHub Actions workflow runs the Bash build, starts PostgreSQL and
+LocalStack, applies only `infrastructure/terraform/local`, and executes the happy path. It is manual
+while the pipeline is being stabilized and never runs for pull requests.
+
+Configure `LOCALSTACK_AUTH_TOKEN` as a GitHub Actions repository secret before dispatching the
+workflow. Diagnostics are uploaded after every run, and the Compose environment is removed even when
+a step fails. The resilience suite remains a later pipeline stage and is not enabled in this initial
+workflow.
 
 ## AWS deployment
 

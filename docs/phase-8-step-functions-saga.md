@@ -145,11 +145,11 @@ to see and reason about, at the price of centralized workflow knowledge.
 
 After configuring the LocalStack Hobby token described in the local guide:
 
-```powershell
-./scripts/local/build.ps1
-./scripts/local/start.ps1
-./scripts/local/provision.ps1
-./scripts/local/saga-demo.ps1
+```bash
+bash ./scripts/bash/local/build.sh
+bash ./scripts/bash/local/start.sh
+bash ./scripts/bash/local/provision.sh
+bash ./scripts/bash/local/saga-demo.sh
 ```
 
 The demo starts four executions:

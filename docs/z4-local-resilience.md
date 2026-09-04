@@ -16,7 +16,7 @@ These scenarios test at-least-once behavior. They do not claim exactly-once deli
 
 ## Complete failure path
 
-`failure-path.ps1` creates eight simulated keyboards. The total exceeds the deterministic payment
+`failure-path.sh` creates eight simulated keyboards. The total exceeds the deterministic payment
 limit while remaining within simulated stock, so the business outcome is predictable:
 
 ```text
@@ -34,7 +34,7 @@ effect. A business decline is successfully handled; it is not a retryable infras
 
 ## Outbox recovery
 
-`outbox-recovery-test.ps1` changes only the emulated Order Outbox Lambda environment and always
+`outbox-recovery-test.sh` changes only the emulated Order Outbox Lambda environment and always
 restores it in `finally`. The first publisher invocation calls a syntactically valid but nonexistent
 local SNS topic. The processor releases the claimed row with:
 
@@ -57,7 +57,7 @@ the later republication window.
 
 ## Lambda, SQS retry, and DLQ
 
-`consumer-dlq-test.ps1` places a valid `OrderCreated` record on the Notification source queue with the
+`consumer-dlq-test.sh` places a valid `OrderCreated` record on the Notification source queue with the
 test-only SQS message attribute `forceFailure=true`. Notification returns that record in
 `batchItemFailures`. Lambda's event-source mapping therefore does not delete it. SQS hides it for the
 visibility timeout, makes it available again, increments its receive count, and moves it to the
@@ -80,24 +80,24 @@ Application code does not call an SQS equivalent of `basicAck()`.
 
 Start and provision the local environment first:
 
-```powershell
-./scripts/local/build.ps1
-./scripts/local/start.ps1
-./scripts/local/provision.ps1
+```bash
+bash ./scripts/bash/local/build.sh
+bash ./scripts/bash/local/start.sh
+bash ./scripts/bash/local/provision.sh
 ```
 
 Run all resilience scenarios:
 
-```powershell
-./scripts/local/resilience-suite.ps1
+```bash
+bash ./scripts/bash/local/resilience-suite.sh
 ```
 
 Or run them separately:
 
-```powershell
-./scripts/local/failure-path.ps1
-./scripts/local/outbox-recovery-test.ps1
-./scripts/local/consumer-dlq-test.ps1
+```bash
+bash ./scripts/bash/local/failure-path.sh
+bash ./scripts/bash/local/outbox-recovery-test.sh
+bash ./scripts/bash/local/consumer-dlq-test.sh
 ```
 
 ## Production boundary
