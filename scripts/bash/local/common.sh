@@ -48,7 +48,7 @@ get_terraform_output() {
 
 invoke_local_aws() {
     enter_repository_root
-    docker compose exec -T localstack awslocal "$@"
+    MSYS_NO_PATHCONV=1 docker compose exec -T localstack awslocal "$@"
 }
 
 invoke_local_aws_with_json_input() {
@@ -58,7 +58,8 @@ invoke_local_aws_with_json_input() {
 
     enter_repository_root
     printf '%s' "$json" |
-        docker compose exec -T localstack awslocal "$@" "$json_option" file:///dev/stdin
+        MSYS_NO_PATHCONV=1 docker compose exec -T localstack \
+            awslocal "$@" "$json_option" file:///dev/stdin
 }
 
 clear_local_queue() {
@@ -67,33 +68,32 @@ clear_local_queue() {
 }
 
 receive_local_message() {
-  local queue_url="$1"
-  local visibility_timeout="${2:-2}"
-  local wait_time_seconds="${3:-2}"
-  local response
+    local queue_url="$1"
+    local visibility_timeout="${2:-2}"
+    local wait_time_seconds="${3:-2}"
+    local response
 
-  response="$(invoke_local_aws sqs receive-message \
-       --queue-url "$queue_url" \
-       --max-number-of-messages 1 \
-       --visibility-timeout "$visibility_timeout" \
-       --wait-time-seconds "$wait_time_seconds" \
-       --attribute-names All)"
+    response="$(invoke_local_aws sqs receive-message \
+        --queue-url "$queue_url" \
+        --max-number-of-messages 1 \
+        --visibility-timeout "$visibility_timeout" \
+        --wait-time-seconds "$wait_time_seconds" \
+        --attribute-names All)"
 
-  if [[ -z "$response" ]]; then
-    return 0
-  fi
+    if [[ -z "$response" ]]; then
+        return 0
+    fi
 
-  jq -c '.message[0] // empty' <<<"$response"
-
-  }
+    jq -c '.Messages[0] // empty' <<<"$response"
+}
 
 remove_local_message() {
     local queue_url="$1"
     local receipt_handle="$2"
 
     invoke_local_aws sqs delete-message \
-    --queue-url "$queue_url"\
-    --receipt-handle "$receipt_handle" >/dev/null
+        --queue-url "$queue_url" \
+        --receipt-handle "$receipt_handle" >/dev/null
 }
 
 invoke_local_lambda() {
@@ -105,7 +105,7 @@ invoke_local_lambda() {
 
     enter_repository_root
     if ! metadata_json="$(printf '%s' "$payload" |
-        docker compose exec -T localstack awslocal lambda invoke \
+        MSYS_NO_PATHCONV=1 docker compose exec -T localstack awslocal lambda invoke \
             --function-name "$function_name" \
             --payload file:///dev/stdin \
             "$remote_output")"; then
@@ -113,11 +113,12 @@ invoke_local_lambda() {
         return 1
     fi
 
-    if ! payload_text="$(docker compose exec -T localstack cat "$remote_output")"; then
+    if ! payload_text="$(MSYS_NO_PATHCONV=1 \
+        docker compose exec -T localstack cat "$remote_output")"; then
         printf 'Could not read the local Lambda response: %s\n' "$function_name" >&2
         return 1
     fi
-    docker compose exec -T localstack rm -f "$remote_output" >/dev/null
+    MSYS_NO_PATHCONV=1 docker compose exec -T localstack rm -f "$remote_output" >/dev/null
 
     if [[ "$(jq -r '.FunctionError // empty' <<<"$metadata_json")" != "" ]]; then
         printf 'Local Lambda %s failed: %s\n' "$function_name" "$payload_text" >&2

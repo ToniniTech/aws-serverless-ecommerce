@@ -51,18 +51,20 @@ resource. It is separate from `infrastructure/terraform/dev`.
 
 ## Prerequisites
 
-- Docker Desktop with the Docker Engine running;
+- Docker with the Docker Engine running;
 - a free LocalStack Hobby auth token;
-- Java 17 and PowerShell;
+- Java 17, Bash 4+, `jq`, and `curl`;
+- Terraform CLI version 1.9 or newer (a Linux binary is required in Linux and WSL2);
 - network access on the first run to pull the LocalStack and Java Lambda runtime images.
 
-The repository includes Maven Wrapper and a Terraform executable. AWS commands run inside the
-LocalStack container, so a host AWS CLI is not required.
+The repository includes Maven Wrapper. AWS commands run inside the LocalStack container, so a host
+AWS CLI is not required. Git Bash and the equivalent PowerShell scripts in `scripts/local` can use
+the ignored bundled Windows Terraform executable.
 
 ## Configure once
 
-```powershell
-Copy-Item .env.example .env
+```bash
+cp .env.example .env
 ```
 
 Set only the local token in `.env`:
@@ -80,25 +82,25 @@ learning machine, but it is a privileged host integration and is not an applicat
 
 Run these commands from the repository root:
 
-```powershell
-./scripts/local/build.ps1
-./scripts/local/start.ps1
-./scripts/local/provision.ps1
+```bash
+bash ./scripts/bash/local/build.sh
+bash ./scripts/bash/local/start.sh
+bash ./scripts/bash/local/provision.sh
 ```
 
-`build.ps1` runs the Java tests and creates four shaded deployment JARs. `start.ps1` starts PostgreSQL
-and LocalStack and waits for their health checks. `provision.ps1` applies only
+`build.sh` runs the Java tests and creates four shaded deployment JARs. `start.sh` starts PostgreSQL
+and LocalStack and waits for their health checks. `provision.sh` applies only
 `infrastructure/terraform/local` to `http://localhost:4566` and fake account `000000000000`.
 
-Terraform is repeatable. Rebuilding a JAR and running `provision.ps1` updates the affected local Lambda
+Terraform is repeatable. Rebuilding a JAR and running `provision.sh` updates the affected local Lambda
 in place. PostgreSQL and LocalStack use named volumes, so ordinary container restarts can retain their
-state. If the emulator is recreated or its topology is absent, run `provision.ps1` again; it only
+state. If the emulator is recreated or its topology is absent, run `provision.sh` again; it only
 recreates local resources in fake account `000000000000`.
 
 ## Run the end-to-end happy path
 
-```powershell
-./scripts/local/happy-path.ps1
+```bash
+bash ./scripts/bash/local/happy-path.sh
 ```
 
 The script:
@@ -121,9 +123,9 @@ the atomic database transaction or at-least-once publication semantics.
 
 ## Low-level messaging exercises
 
-```powershell
-./scripts/local/smoke-test.ps1
-./scripts/local/dlq-test.ps1
+```bash
+bash ./scripts/bash/local/smoke-test.sh
+bash ./scripts/bash/local/dlq-test.sh
 ```
 
 The smoke test proves SNS fan-out and EventBridge rule routing by inspecting each independent queue.
@@ -139,8 +141,8 @@ RabbitMQ `basicAck()` or `basicNack()` directly in application code.
 
 ## Run the resilience suite
 
-```powershell
-./scripts/local/resilience-suite.ps1
+```bash
+bash ./scripts/bash/local/resilience-suite.sh
 ```
 
 The Z4 suite performs four connected checks across three scripts:
@@ -158,10 +160,10 @@ The Z4 suite performs four connected checks across three scripts:
 
 The component exercises can also be run independently:
 
-```powershell
-./scripts/local/failure-path.ps1
-./scripts/local/outbox-recovery-test.ps1
-./scripts/local/consumer-dlq-test.ps1
+```bash
+bash ./scripts/bash/local/failure-path.sh
+bash ./scripts/bash/local/outbox-recovery-test.sh
+bash ./scripts/bash/local/consumer-dlq-test.sh
 ```
 
 The recovery script restores the original local Lambda environment in a `finally` block. The DLQ
@@ -170,8 +172,8 @@ development Terraform root.
 
 ## Run the Step Functions Saga
 
-```powershell
-./scripts/local/saga-demo.ps1
+```bash
+bash ./scripts/bash/local/saga-demo.sh
 ```
 
 Z5 keeps this orchestration separate from the choreography. The state machine invokes explicit
@@ -184,19 +186,19 @@ restores the reservation, and repeating either business Saga does not repeat its
 
 ## Inspect logs and data
 
-```powershell
+```bash
 docker compose logs -f localstack
 
-docker compose exec payment-postgres `
+docker compose exec payment-postgres \
   psql -U payment_local -d payments -c "SELECT order_id, status FROM payments;"
 
-docker compose exec payment-postgres `
+docker compose exec payment-postgres \
   psql -U payment_local -d payments -c "SELECT order_id, status FROM order_domain.orders;"
 
-docker compose exec payment-postgres `
+docker compose exec payment-postgres \
   psql -U payment_local -d payments -c "SELECT event_id, event_type, status FROM notification_domain.notifications;"
 
-docker compose exec payment-postgres `
+docker compose exec payment-postgres \
   psql -U payment_local -d payments -c "SELECT event_id, processed_at FROM notification_domain.notification_processed_events;"
 ```
 
@@ -205,7 +207,7 @@ Structured logs include event IDs, correlation IDs, order IDs, receive counts, a
 
 ## Stop safely
 
-```powershell
+```bash
 docker compose down
 ```
 
