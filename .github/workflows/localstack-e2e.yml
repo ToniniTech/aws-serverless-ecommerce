@@ -1,0 +1,92 @@
+name: LocalStack E2E
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: localstack-e2e-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  happy-path:
+    name: LocalStack happy path
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: "1.15.8"
+          terraform_wrapper: false
+
+      - name: Install E2E prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes curl jq
+
+      - name: Verify LocalStack token
+        env:
+          LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
+        shell: bash
+        run: |
+          if [[ -z "${LOCALSTACK_AUTH_TOKEN:-}" ]]; then
+            echo "LOCALSTACK_AUTH_TOKEN is not configured." >&2
+            exit 1
+          fi
+
+      - name: Make scripts executable
+        run: chmod +x mvnw scripts/bash/local/*.sh
+
+      - name: Validate Bash scripts
+        run: bash -n scripts/bash/local/*.sh
+
+      - name: Build and test
+        run: bash ./scripts/bash/local/build.sh
+
+      - name: Start PostgreSQL and LocalStack
+        env:
+          LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
+        run: bash ./scripts/bash/local/start.sh
+
+      - name: Provision local topology
+        run: bash ./scripts/bash/local/provision.sh
+
+      - name: Run happy path
+        run: bash ./scripts/bash/local/happy-path.sh
+
+      - name: Collect diagnostics
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          mkdir -p artifacts/localstack-e2e
+          docker compose ps --all > artifacts/localstack-e2e/compose-ps.txt 2>&1
+          docker compose logs --no-color > artifacts/localstack-e2e/compose.log 2>&1
+          docker ps --all --no-trunc > artifacts/localstack-e2e/docker-ps.txt 2>&1
+
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: localstack-e2e-diagnostics-${{ github.run_id }}
+          path: artifacts/localstack-e2e
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Clean up local environment
+        if: always()
+        run: docker compose down --volumes --remove-orphans
