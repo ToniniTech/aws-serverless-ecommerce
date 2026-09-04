@@ -1,5 +1,7 @@
 # AWS Serverless E-Commerce
 
+[![CI](https://github.com/toninitech/aws-serverless-ecommerce/actions/workflows/ci.yml/badge.svg)](https://github.com/toninitech/aws-serverless-ecommerce/actions/workflows/ci.yml)
+
 Event-driven e-commerce backend designed for AWS and implemented with Java 17 and Terraform. It demonstrates transactional outboxes, idempotent consumers, asynchronous payment processing, dead-letter queues, observability, and Saga compensation.
 
 The complete architecture can be exercised locally with PostgreSQL, Docker, Testcontainers, and LocalStack without provisioning billable AWS resources.
